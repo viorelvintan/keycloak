@@ -124,16 +124,10 @@ public class QuarkusLiquibaseConnectionProvider implements LiquibaseConnectionPr
             database.setDefaultSchemaName(defaultSchema);
         }
 
-        logger.infof("Database is %s %s %s %s %s", database.getClass().getName(), database.getDatabaseProductName(), database.getDatabaseProductVersion(), database.getShortName(), database);
-        /*
         String changelog = QuarkusJpaUpdaterProvider.CHANGELOG;
         if (database instanceof CockroachDatabase) {
-          logger.info("CockroachDatabase!");
           changelog = QuarkusJpaUpdaterProvider.CHANGELOG_CRDB;
         }
-        */
-        // above not detecting database type. forcing for test.
-        String changelog = QuarkusJpaUpdaterProvider.CHANGELOG_CRDB;
 
         logger.debugf("Using changelog file %s and changelogTableName %s", changelog, database.getDatabaseChangeLogTableName());
 
