@@ -29,12 +29,14 @@ import javax.persistence.FlushModeType;
 import javax.persistence.SynchronizationType;
 import org.hibernate.internal.SessionFactoryImpl;
 import org.keycloak.Config;
+import org.keycloak.connections.jpa.CockroachDbJpaKeycloakTransaction;
 import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.JpaKeycloakTransaction;
 import org.keycloak.connections.jpa.PersistenceExceptionConverter;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.storage.database.Database;
 
 import io.quarkus.arc.Arc;
 import io.quarkus.hibernate.orm.PersistenceUnit;
@@ -109,6 +111,11 @@ public abstract class AbstractJpaConnectionProviderFactory implements JpaConnect
             entityManager = PersistenceExceptionConverter.create(session, emf.createEntityManager(SynchronizationType.SYNCHRONIZED));
         } else {
             entityManager = PersistenceExceptionConverter.create(session, emf.createEntityManager());
+            if (Database.Vendor.getVendor(getConnection()) == Database.Vendor.COCKROACH) {
+              session.getTransactionManager().enlist(new CockroachDbJpaKeycloakTransaction(entityManager));
+            } else {
+              session.getTransactionManager().enlist(new JpaKeycloakTransaction(entityManager));
+            }
         }
 
         entityManager.setFlushMode(FlushModeType.AUTO);

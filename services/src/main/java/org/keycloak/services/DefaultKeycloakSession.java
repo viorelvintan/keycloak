@@ -514,6 +514,9 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     public void close() {
+        if (transactionManager != null){
+            transactionManager.releaseSavePoint();
+        }
         Consumer<? super Provider> safeClose = p -> {
             try {
                 p.close();

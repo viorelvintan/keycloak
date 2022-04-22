@@ -7,6 +7,7 @@ import org.jboss.resteasy.spi.HttpResponse;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.Config;
 import org.keycloak.common.util.Resteasy;
+import org.keycloak.exceptions.RetryableTransactionException;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
@@ -55,6 +56,11 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
 
     @Override
     public Response toResponse(Throwable throwable) {
+        if (throwable instanceof RetryableTransactionException) {
+            RetryableTransactionException e = (RetryableTransactionException) throwable;
+            throw e;
+        }
+
         KeycloakSession session = Resteasy.getContextData(KeycloakSession.class);
         KeycloakTransaction tx = session.getTransactionManager();
         tx.setRollbackOnly();

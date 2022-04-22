@@ -20,6 +20,7 @@ package org.keycloak.quarkus.runtime.storage.database;
 import static java.util.Arrays.asList;
 
 import java.io.File;
+import java.sql.Connection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -95,7 +96,7 @@ public final class Database {
         return DATABASES.keySet().stream().sorted().toArray(String[]::new);
     }
 
-    private enum Vendor {
+  public enum Vendor {
         H2("h2",
                 "org.h2.jdbcx.JdbcDataSource",
                 "org.h2.Driver",
@@ -194,5 +195,20 @@ public final class Database {
         public boolean isOfKind(String dbKind) {
             return databaseKind.equals(dbKind);
         }
+
+        public static Vendor getVendor(Connection connection) {
+          try {
+            liquibase.database.Database database = liquibase.database.DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new liquibase.database.jvm.JdbcConnection(connection));
+            if (database instanceof liquibase.database.core.H2Database) return H2;
+            if (database instanceof liquibase.database.core.MySQLDatabase) return MYSQL;
+            if (database instanceof liquibase.database.core.MariaDBDatabase) return MARIADB;
+            if (database instanceof liquibase.database.core.PostgresDatabase) return POSTGRES;
+            if (database instanceof liquibase.database.core.MSSQLDatabase) return MSSQL;
+            if (database instanceof liquibase.database.core.OracleDatabase) return ORACLE;
+            if (database instanceof liquibase.database.core.CockroachDatabase) return COCKROACH;
+          } catch (Exception ignore) {}
+          throw new IllegalStateException("unsupported or unknown database type");
+        }
+
     }
 }

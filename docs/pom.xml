@@ -40,7 +40,7 @@
             </activation>
             <modules>
                 <module>maven-plugin</module>
-                <module>guides</module>
+                <!-- <module>guides</module> -->
             </modules>
         </profile>
     </profiles>

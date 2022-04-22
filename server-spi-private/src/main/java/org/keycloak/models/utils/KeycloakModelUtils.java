@@ -25,13 +25,11 @@ import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.SecretGenerator;
-import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -62,6 +60,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -72,12 +71,15 @@ import org.keycloak.provider.ProviderFactory;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
+import org.jboss.logging.Logger;
 /**
  * Set of helper methods, which are useful in various model implementations.
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public final class KeycloakModelUtils {
+
+    private static final Logger logger = Logger.getLogger(KeycloakModelUtils.class);
 
     private KeycloakModelUtils() {
     }
@@ -150,7 +152,6 @@ public final class KeycloakModelUtils {
     public static String generateSecret(ClientModel client) {
         String secret = SecretGenerator.getInstance().randomString();
         client.setSecret(secret);
-        client.setAttribute(ClientSecretConstants.CLIENT_SECRET_CREATION_TIME,String.valueOf(Time.currentTime()));
         return secret;
     }
 
@@ -237,24 +238,57 @@ public final class KeycloakModelUtils {
     public static void runJobInTransaction(KeycloakSessionFactory factory, KeycloakSessionTask task) {
         KeycloakSession session = factory.create();
         KeycloakTransaction tx = session.getTransactionManager();
-        try {
+        int cnt = 0;
+        while (++cnt < RetryUtil.MAX_RETRIES) {
+          logger.infof("Attempting transaction. Try #%d", cnt);
+          try {
             tx.begin();
             task.run(session);
-
+            
             if (tx.isActive()) {
-                if (tx.getRollbackOnly()) {
-                    tx.rollback();
-                } else {
-                    tx.commit();
-                }
-            }
-        } catch (RuntimeException re) {
-            if (tx.isActive()) {
+              if (tx.getRollbackOnly()) {
+                logger.infof("Attempting rollback transaction. Try #%d", cnt);
                 tx.rollback();
+              } else {
+                logger.infof("Attempting commit transaction. Try #%d", cnt);
+                tx.commit();
+              }
             }
-            throw re;
-        } finally {
+            logger.infof("Successful commit. Break retry loop at %s tries.", cnt);
+            break;
+          } catch (RuntimeException re) {
+            logger.warn("Exception executing transaction", re);
+            logger.infof("Transaction active? %b Should retry? %b", tx.isActive(), RetryUtil.shouldRetry(re));
+            /*
+              Idea:
+              Instead of rolling back the whole transaction on a retryable SQLException, what about
+              session.getProvider(JpaConnectionProvider.class).getEntityManager().getTransaction().rollback()
+              if it's active? We can still roll back the entire keycloak transaction if it fails the retry
+              loop, and the above will contstrain it to only the java.sql.Connection transaction.
+
+              Bah! JpaConnectionProvider can't be depended on, as it's in the model package. Maybe do this
+              in JpaKeycloakTransaction instead?
+
+              if (tx.isActive() && RetryUtil.shouldRetry(re) && RetryUtil.rollbackJpaTransaction(session)) {
+            */
+            if (tx.isActive() && RetryUtil.shouldRetry(re)) {
+              tx.rollback();
+              int sleepMillis = (int)(Math.pow(2, cnt) * 100) + new Random().nextInt(100);
+              logger.infof("Retryable exception. Sleeping for %d before retry #%d", sleepMillis, cnt);
+              try {
+                Thread.sleep(sleepMillis);
+              } catch (InterruptedException ignored) {
+                // Need to throw this? Or continue to allow transaction retry before throw?
+              }
+            } else {
+              if (tx.isActive()) {
+                tx.rollback();
+              }
+              throw re;
+            }
+          } finally {
             session.close();
+          }
         }
     }
 

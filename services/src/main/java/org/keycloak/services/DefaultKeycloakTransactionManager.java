@@ -17,6 +17,7 @@
 package org.keycloak.services;
 
 import org.jboss.logging.Logger;
+import org.keycloak.exceptions.RetryableTransactionException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.KeycloakTransactionManager;
@@ -50,7 +51,8 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
 
     @Override
     public void enlist(KeycloakTransaction transaction) {
-        if (active && !transaction.isActive()) {
+      logger.infof("enlist %s", transaction.getClass().getName());
+      if (active && !transaction.isActive()) {
             transaction.begin();
         }
 
@@ -105,6 +107,7 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
         }
 
         for (KeycloakTransaction tx : transactions) {
+          logger.infof("begin %s", tx.getClass().getName());
             tx.begin();
         }
 
@@ -132,9 +135,12 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
             return;
         }
         for (KeycloakTransaction tx : transactions) {
+          logger.infof("commit %s", tx.getClass().getName());
             try {
                 tx.commit();
             } catch (RuntimeException e) {
+              logger.warn("Error in transaction commit", e);
+              logger.infof("After error, transaction is active? %b", tx.isActive());
                 exception = exception == null ? e : exception;
             }
         }
@@ -160,6 +166,10 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
 
         active = false;
         if (exception != null) {
+            if (exception instanceof RetryableTransactionException){
+                completed = false;
+                active = true;
+            }
             throw exception;
         }
     }
@@ -222,4 +232,10 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
         return active;
     }
 
+    @Override
+    public void releaseSavePoint(){
+        for (KeycloakTransaction tx: transactions) {
+            tx.releaseSavePoint();
+        }
+    }
 }

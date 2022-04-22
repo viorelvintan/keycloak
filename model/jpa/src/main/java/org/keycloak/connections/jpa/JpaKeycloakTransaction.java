@@ -45,16 +45,17 @@ public class JpaKeycloakTransaction implements KeycloakTransaction {
     @Override
     public void commit() {
         try {
-            logger.trace("Committing transaction");
+            logger.info("Committing transaction");
             em.getTransaction().commit();
         } catch (PersistenceException e) {
-            throw PersistenceExceptionConverter.convert(e.getCause() != null ? e.getCause() : e);
+          logger.warn("PersistenceException committing transaction", e);
+          throw PersistenceExceptionConverter.convert(e.getCause() != null ? e.getCause() : e);
         }
     }
 
     @Override
     public void rollback() {
-        logger.trace("Rollback transaction");
+        logger.info("Rollback transaction");
         em.getTransaction().rollback();
     }
 

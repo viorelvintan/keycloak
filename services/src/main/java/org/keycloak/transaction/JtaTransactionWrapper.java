@@ -86,9 +86,14 @@ public class JtaTransactionWrapper implements KeycloakTransaction {
     @Override
     public void commit() {
         try {
-            logger.debug("JtaTransactionWrapper  commit");
+          logger.infof("commit %s %s", tm.getClass().getName(), tm.getClass().getName());
+
+          logger.debug("JtaTransactionWrapper  commit");
             tm.commit();
         } catch (Exception e) {
+          try{
+            logger.infof("Error during commit. Status %d", tm.getStatus());
+          } catch (Exception ignore) {}
             handleException(e);
         } finally {
             end();
