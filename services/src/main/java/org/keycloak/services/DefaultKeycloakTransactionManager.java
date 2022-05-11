@@ -101,13 +101,14 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
             if (jtaLookup != null) {
                 TransactionManager tm = jtaLookup.getTransactionManager();
                 if (tm != null) {
+                  logger.infof("wrapping existing transaction manager %s: %s", tm.getClass().getName(), tm);
                    enlist(new JtaTransactionWrapper(session.getKeycloakSessionFactory(), tm));
                 }
             }
         }
 
         for (KeycloakTransaction tx : transactions) {
-          logger.infof("begin %s", tx.getClass().getName());
+          logger.infof("begin %s: %s", tx.getClass().getName());
             tx.begin();
         }
 
