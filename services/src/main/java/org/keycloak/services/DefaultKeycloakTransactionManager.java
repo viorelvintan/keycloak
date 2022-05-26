@@ -51,7 +51,7 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
 
     @Override
     public void enlist(KeycloakTransaction transaction) {
-      logger.infof("enlist %s", transaction.getClass().getName());
+      //logger.infof("enlist %s", transaction.getClass().getName());
       if (active && !transaction.isActive()) {
             transaction.begin();
         }
@@ -108,7 +108,7 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
         }
 
         for (KeycloakTransaction tx : transactions) {
-          logger.infof("begin %s", tx.getClass().getName());
+          //logger.infof("begin %s", tx.getClass().getName());
             tx.begin();
         }
 
@@ -136,10 +136,11 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
             return;
         }
 
+        /*
         for (KeycloakTransaction tx : transactions) {
             logger.infof("before commit %s", tx.toString());
         }
-
+        */
         for (KeycloakTransaction tx : transactions) {
             try {
                 tx.commit();

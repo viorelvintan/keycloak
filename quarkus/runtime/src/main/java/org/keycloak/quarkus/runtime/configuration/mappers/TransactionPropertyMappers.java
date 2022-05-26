@@ -1,10 +1,13 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
+import org.jboss.logging.Logger;
+import org.keycloak.connections.jpa.JpaKeycloakTransaction;
 
 import java.util.Arrays;
 
 public class TransactionPropertyMappers {
+    private static final Logger logger = Logger.getLogger(TransactionPropertyMappers.class);
 
     private TransactionPropertyMappers(){}
 
@@ -24,13 +27,17 @@ public class TransactionPropertyMappers {
 
     private static String getQuarkusTransactionsValue(String txValue, ConfigSourceInterceptorContext context) {
         boolean isXaEnabled = Boolean.parseBoolean(txValue);
-
+        //logger.infof("isXaEnabled %b, returning %s", isXaEnabled, isXaEnabled ? "xa" : "enabled");
+        /*
         if (isXaEnabled) {
             return "xa";
         }
 
         return "enabled";
+        */
+        return "disabled";
     }
+
 
     private static PropertyMapper.Builder builder() {
         return PropertyMapper.builder(ConfigCategory.TRANSACTION);
