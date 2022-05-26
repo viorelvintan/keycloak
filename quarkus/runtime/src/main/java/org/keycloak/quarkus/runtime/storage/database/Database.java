@@ -20,6 +20,7 @@ package org.keycloak.quarkus.runtime.storage.database;
 import static java.util.Arrays.asList;
 
 import java.io.File;
+import java.sql.Connection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +28,6 @@ import java.util.Optional;
 import java.util.function.Function;
 
 public final class Database {
-
     private static final Map<String, Vendor> DATABASES = new HashMap<>();
 
     static {
@@ -96,7 +96,7 @@ public final class Database {
         return DATABASES.keySet().stream().sorted().toArray(String[]::new);
     }
 
-    private enum Vendor {
+  public enum Vendor {
         H2("h2",
                 "org.h2.jdbcx.JdbcDataSource",
                 "org.h2.Driver",
@@ -147,12 +147,20 @@ public final class Database {
                 "mssql"
         ),
         ORACLE("oracle",
-                "oracle.jdbc.xa.client.OracleXADataSource",
+               "oracle.jdbc.xa.client.OracleXADataSource",
                 "oracle.jdbc.driver.OracleDriver",
                 "org.hibernate.dialect.Oracle12cDialect",
                 "jdbc:oracle:thin:@//${kc.db-url-host:localhost}:${kc.db-url-port:1521}/${kc.db-url-database:keycloak}",
                 asList("liquibase.database.core.OracleDatabase")
-        );
+               ),
+        COCKROACH("cockroach",
+                "org.postgresql.xa.PGXADataSource",
+                "org.postgresql.Driver",
+                "org.hibernate.dialect.CockroachDB201Dialect",
+                "jdbc:postgresql://${kc.db-url-host:localhost}/${kc.db-url-database:keycloak}${kc.db-url-properties:}",
+                asList("liquibase.database.core.CockroachDatabase")
+                  );
+
 
         final String databaseKind;
         final String xaDriver;
@@ -187,5 +195,20 @@ public final class Database {
         public boolean isOfKind(String dbKind) {
             return databaseKind.equals(dbKind);
         }
+
+        public static Vendor getVendor(Connection connection) {
+          try {
+            liquibase.database.Database database = liquibase.database.DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new liquibase.database.jvm.JdbcConnection(connection));
+            if (database instanceof liquibase.database.core.H2Database) return H2;
+            if (database instanceof liquibase.database.core.MySQLDatabase) return MYSQL;
+            if (database instanceof liquibase.database.core.MariaDBDatabase) return MARIADB;
+            if (database instanceof liquibase.database.core.PostgresDatabase) return POSTGRES;
+            if (database instanceof liquibase.database.core.MSSQLDatabase) return MSSQL;
+            if (database instanceof liquibase.database.core.OracleDatabase) return ORACLE;
+            if (database instanceof liquibase.database.core.CockroachDatabase) return COCKROACH;
+          } catch (Exception ignore) {}
+          throw new IllegalStateException("unsupported or unknown database type");
+        }
+
     }
 }

@@ -25,12 +25,14 @@ public class TransactionPropertyMappers {
 
     private static String getQuarkusTransactionsValue(String txValue, ConfigSourceInterceptorContext context) {
         boolean isXaEnabled = Boolean.parseBoolean(txValue);
-
+        /*
         if (isXaEnabled) {
             return "xa";
         }
 
         return "enabled";
+        */
+        return "disabled";
     }
 
     private static <T> PropertyMapper.Builder<T> builder() {
