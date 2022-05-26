@@ -38,7 +38,13 @@ public class JpaKeycloakTransaction implements KeycloakTransaction {
     }
 
     @Override
+    public String toString() {
+        return String.format("JpaKeycloakTransaction: %s, EntityTransaction: %s", getClass().getName(), em.getTransaction().getClass().getName());
+    }
+
+    @Override
     public void begin() {
+        logger.info("Begin transaction");
         em.getTransaction().begin();
     }
 
@@ -50,6 +56,9 @@ public class JpaKeycloakTransaction implements KeycloakTransaction {
         } catch (PersistenceException e) {
           logger.warn("PersistenceException committing transaction", e);
           throw PersistenceExceptionConverter.convert(e.getCause() != null ? e.getCause() : e);
+        } catch (Throwable t) {
+            logger.warn("Throwable committing transaction", t);
+            throw (RuntimeException)t;
         }
     }
 

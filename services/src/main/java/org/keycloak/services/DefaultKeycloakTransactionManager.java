@@ -108,7 +108,7 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
         }
 
         for (KeycloakTransaction tx : transactions) {
-          logger.infof("begin %s: %s", tx.getClass().getName());
+          logger.infof("begin %s", tx.getClass().getName());
             tx.begin();
         }
 
@@ -135,8 +135,12 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
             rollback(exception);
             return;
         }
+
         for (KeycloakTransaction tx : transactions) {
-          logger.infof("commit %s", tx.getClass().getName());
+            logger.infof("before commit %s", tx.toString());
+        }
+
+        for (KeycloakTransaction tx : transactions) {
             try {
                 tx.commit();
             } catch (RuntimeException e) {
