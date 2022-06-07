@@ -134,6 +134,7 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
         }
         for (KeycloakTransaction tx : transactions) {
             try {
+              logger.infof("commit %s", tx.toString());
                 tx.commit();
             } catch (RuntimeException e) {
                 logger.warn("Error in transaction commit", e);
