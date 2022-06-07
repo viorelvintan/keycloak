@@ -59,10 +59,10 @@
         <product.rhsso.version>7.5.0.GA</product.rhsso.version>
 
         <product.build-time>${timestamp}</product.build-time>
-        <wildfly.version>26.1.0.Final</wildfly.version>
+        <wildfly.version>26.1.1.Final</wildfly.version>
         <wildfly.build-tools.version>1.2.13.Final</wildfly.build-tools.version>
         <eap.version>7.4.0.GA-redhat-00005</eap.version>
-        <wildfly.core.version>18.1.0.Final</wildfly.core.version>
+        <wildfly.core.version>18.1.1.Final</wildfly.core.version>
 
         <jboss.as.version>7.2.0.Final</jboss.as.version>
         <jboss.as.subsystem.test.version>7.5.22.Final-redhat-1</jboss.as.subsystem.test.version>
@@ -118,6 +118,7 @@
         <xmlsec.version>2.2.3</xmlsec.version>
         <glassfish.json.version>1.1.6</glassfish.json.version>
         <wildfly.common.version>1.6.0.Final</wildfly.common.version>
+        <nashorn.version>15.3</nashorn.version>
         <ua-parser.version>1.5.2</ua-parser.version>
         <picketbox.version>5.0.3.Final</picketbox.version>
         <google.guava.version>30.1-jre</google.guava.version>
@@ -200,7 +201,7 @@
         <spring-boot26.version>2.6.1</spring-boot26.version>
 
         <!-- webauthn support -->
-        <webauthn4j.version>0.19.3.RELEASE</webauthn4j.version>
+        <webauthn4j.version>0.20.0.RELEASE</webauthn4j.version>
         <org.apache.kerby.kerby-asn1.version>2.0.0</org.apache.kerby.kerby-asn1.version>
 
         <!-- WildFly Galleon Build related properties -->
@@ -591,6 +592,11 @@
                 <groupId>org.glassfish</groupId>
                 <artifactId>jakarta.json</artifactId>
                 <version>${glassfish.json.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.openjdk.nashorn</groupId>
+                <artifactId>nashorn-core</artifactId>
+                <version>${nashorn.version}</version>
             </dependency>
 
             <!-- Twitter -->

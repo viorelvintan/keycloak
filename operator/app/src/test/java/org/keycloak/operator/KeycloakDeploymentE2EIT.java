@@ -1,6 +1,8 @@
 package org.keycloak.operator;
 
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.apps.DeploymentSpecBuilder;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
@@ -8,11 +10,11 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.keycloak.operator.utils.K8sUtils;
-import org.keycloak.operator.v2alpha1.KeycloakAdminSecret;
-import org.keycloak.operator.v2alpha1.KeycloakDeployment;
-import org.keycloak.operator.v2alpha1.KeycloakService;
-import org.keycloak.operator.v2alpha1.crds.Keycloak;
-import org.keycloak.operator.v2alpha1.crds.ValueOrSecret;
+import org.keycloak.operator.controllers.KeycloakAdminSecret;
+import org.keycloak.operator.controllers.KeycloakDeployment;
+import org.keycloak.operator.controllers.KeycloakService;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -20,7 +22,10 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -146,6 +151,9 @@ public class KeycloakDeploymentE2EIT extends ClusterOperatorTest {
             k8sclient.apps().deployments().createOrReplace(deployment);
 
             Awaitility.await()
+                    .atMost(5, MINUTES)
+                    .pollDelay(1, SECONDS)
+                    .ignoreExceptions()
                     .untilAsserted(() -> {
                         var d = k8sclient.apps().deployments().withName(deploymentName).get();
                         assertThat(d.getMetadata().getLabels().entrySet().containsAll(labels.entrySet())).isTrue(); // additional labels should not be overwritten
@@ -343,6 +351,63 @@ public class KeycloakDeploymentE2EIT extends ClusterOperatorTest {
 
             assertEquals(1, pods.get(0).getSpec().getContainers().get(0).getArgs().size());
             assertEquals("start", pods.get(0).getSpec().getContainers().get(0).getArgs().get(0));
+        } catch (Exception e) {
+            savePodLogs();
+            throw e;
+        }
+    }
+
+    @Test
+    public void testHttpRelativePathWithPlainValue() {
+        try {
+            var kc = getDefaultKeycloakDeployment();
+            kc.getSpec().getServerConfiguration().add(new ValueOrSecret(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY, "/foobar"));
+            deployKeycloak(k8sclient, kc, true);
+
+            var pods = k8sclient
+                    .pods()
+                    .inNamespace(namespace)
+                    .withLabels(Constants.DEFAULT_LABELS)
+                    .list()
+                    .getItems();
+
+            assertTrue(pods.get(0).getSpec().getContainers().get(0).getReadinessProbe().getExec().getCommand().stream().collect(Collectors.joining()).contains("foobar"));
+        } catch (Exception e) {
+            savePodLogs();
+            throw e;
+        }
+    }
+
+    @Test
+    public void testHttpRelativePathWithSecretValue() {
+        try {
+            var kc = getDefaultKeycloakDeployment();
+            var secretName = "my-http-relative-path";
+            var keyName = "rel-path";
+            var httpRelativePathSecret = new SecretBuilder()
+                    .withNewMetadata()
+                    .withName(secretName)
+                    .withNamespace(namespace)
+                    .endMetadata()
+                    .addToStringData(keyName, "/barfoo")
+                    .build();
+            k8sclient.secrets().inNamespace(namespace).createOrReplace(httpRelativePathSecret);
+
+            kc.getSpec().getServerConfiguration().add(new ValueOrSecret(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY,
+                    new SecretKeySelectorBuilder()
+                        .withName(secretName)
+                        .withKey(keyName)
+                        .build()));
+            deployKeycloak(k8sclient, kc, true);
+
+            var pods = k8sclient
+                    .pods()
+                    .inNamespace(namespace)
+                    .withLabels(Constants.DEFAULT_LABELS)
+                    .list()
+                    .getItems();
+
+            assertTrue(pods.get(0).getSpec().getContainers().get(0).getReadinessProbe().getExec().getCommand().stream().collect(Collectors.joining()).contains("barfoo"));
         } catch (Exception e) {
             savePodLogs();
             throw e;
