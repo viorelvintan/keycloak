@@ -160,17 +160,4 @@ public class JtaTransactionWrapper implements KeycloakTransaction {
         }
 
     }
-
-    @Override
-    public String toString() {
-      try {
-        return String.format("TransactionManager: %s [%s], Transaction: %s [%s], Suspended: %s [%s]",
-                             tm == null ? "" : tm.getClass().getName(), tm == null ? "" : tm.getStatus(),
-                             ut == null ? "" : ut.getClass().getName(), ut == null ? "" : ut.getStatus(),
-                             suspended == null ? "" : suspended.getClass().getName(), suspended == null ? "" : suspended.getStatus());
-      } catch (Exception e) {
-        logger.warn("Error in toString", e);
-      }
-      return "Error";
-    }
 }

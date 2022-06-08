@@ -99,7 +99,6 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
             if (jtaLookup != null) {
                 TransactionManager tm = jtaLookup.getTransactionManager();
                 if (tm != null) {
-                   logger.debugf("wrapping existing transaction manager %s: %s", tm.getClass().getName(), tm);
                    enlist(new JtaTransactionWrapper(session.getKeycloakSessionFactory(), tm));
                 }
             }
@@ -134,11 +133,8 @@ public class DefaultKeycloakTransactionManager implements KeycloakTransactionMan
         }
         for (KeycloakTransaction tx : transactions) {
             try {
-              logger.infof("commit %s", tx.toString());
                 tx.commit();
             } catch (RuntimeException e) {
-                logger.warn("Error in transaction commit", e);
-                logger.infof("After error, transaction is active? %b", tx.isActive());
                 exception = exception == null ? e : exception;
             }
         }

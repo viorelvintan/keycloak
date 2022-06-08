@@ -18,7 +18,6 @@
 package org.keycloak.connections.jpa;
 
 import org.hibernate.exception.ConstraintViolationException;
-import org.jboss.logging.Logger;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -31,13 +30,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.regex.Pattern;
-import org.jboss.logging.Logger;
-import org.keycloak.models.utils.RetryUtil;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class PersistenceExceptionConverter implements InvocationHandler {
-    private static final Logger logger = Logger.getLogger(PersistenceExceptionConverter.class);
 
     private static final Pattern WRITE_METHOD_NAMES = Pattern.compile("persist|merge");
 
@@ -58,18 +55,11 @@ public class PersistenceExceptionConverter implements InvocationHandler {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        logger.debugf("invoking %s on EntityManager", method.getName());
         try {
             flushInBatchIfEnabled(method);
             return method.invoke(em, args);
         } catch (InvocationTargetException e) {
-          boolean retry = RetryUtil.shouldRetry(e.getTargetException());
-          logger.warn(String.format("error during %s, retryable %b", method.getName(), retry), e.getTargetException());
-          throw convert(e.getCause());
-        } catch (Throwable t) {
-          boolean retry = RetryUtil.shouldRetry(t);
-          logger.warn(String.format("error during %s, retryable %b", method.getName(), retry), t);
-          throw t;
+            throw convert(e.getCause());
         }
     }
 
