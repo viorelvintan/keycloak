@@ -1,11 +1,14 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
+import io.smallrye.config.ConfigValue;
 import org.keycloak.config.OptionCategory;
+import org.jboss.logging.Logger;
 
 import java.util.Arrays;
 
 public class TransactionPropertyMappers {
+    private static final Logger logger = Logger.getLogger(TransactionPropertyMappers.class);
 
     private TransactionPropertyMappers(){}
 
@@ -20,23 +23,43 @@ public class TransactionPropertyMappers {
                         .isBuildTimeProperty(true)
                         .transformer(TransactionPropertyMappers::getQuarkusTransactionsValue)
                         .build(),
+                builder().from("transaction-jta-enabled")
+                        .to("quarkus.datasource.jdbc.transactions")
+                        .defaultValue(Boolean.TRUE.toString())
+                        .description("Manually override use of JTA. Enabled default.")
+                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
+                        .expectedValues(Arrays.asList(Boolean.TRUE.toString(), Boolean.FALSE.toString()))
+                        .isBuildTimeProperty(true)
+                        .transformer(TransactionPropertyMappers::getQuarkusTransactionsValue)
+                        .build(),
         };
     }
 
-    private static String getQuarkusTransactionsValue(String txValue, ConfigSourceInterceptorContext context) {
-        boolean isXaEnabled = Boolean.parseBoolean(txValue);
-        /*
-        if (isXaEnabled) {
-            return "xa";
-        }
-
-        return "enabled";
-        */
-        return "disabled";
+  private static String getQuarkusTransactionsValue(String txValue, ConfigSourceInterceptorContext context) {
+    boolean isXaEnabled = getBooleanValue("kc.transaction-xa-enabled", context, true);
+    boolean isJtaEnabled = getBooleanValue("kc.transaction-jta-enabled", context, true);
+    
+    if (!isJtaEnabled) {
+      return "disabled";
     }
-
-    private static <T> PropertyMapper.Builder<T> builder() {
-        return PropertyMapper.builder(OptionCategory.TRANSACTION);
+    
+    if (isXaEnabled) {
+      return "xa";
     }
+    
+    return "enabled";
+  }
+  
+  private static <T> PropertyMapper.Builder<T> builder() {
+    return PropertyMapper.builder(OptionCategory.TRANSACTION);
+  }
 
+  private static boolean getBooleanValue(String key, ConfigSourceInterceptorContext context, boolean defaultValue) {
+    boolean v = defaultValue;
+    ConfigValue cv = context.proceed(key);
+    if (cv != null) {
+      v = Boolean.parseBoolean(cv.getValue());
+    }
+    return v;
+  }
 }
