@@ -3,12 +3,10 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 import org.keycloak.config.OptionCategory;
-import org.jboss.logging.Logger;
 
 import java.util.Arrays;
 
 public class TransactionPropertyMappers {
-    private static final Logger logger = Logger.getLogger(TransactionPropertyMappers.class);
 
     private TransactionPropertyMappers(){}
 
