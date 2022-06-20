@@ -5,7 +5,7 @@
 <@tmpl.guide
     title="Configuring the database"
     summary="An overview about how to configure relational databases"
-    includedOptions="db db-* transaction-xa-enabled">
+    includedOptions="db db-* db-xa-enabled">
 
 In this guide, you are going to understand how to configure the server to store data using different relational databases.
 You will also learn what databases are supported by the server.
@@ -122,7 +122,7 @@ By default, the maximum timeout for this lock is 900 seconds. If a node is waiti
 == Using Database Vendors without XA transaction support
 Keycloak uses XA transactions and the appropriate database drivers by default. There are vendors like Azure SQL and MariaDB Galera, that do not support or rely on the XA transaction mechanism. To use Keycloak without XA transaction support using the appropriate jdbc driver, invoke the following command:
 
-<@kc.build parameters="--db=<vendor> --transaction-xa-enabled=false"/>
+<@kc.build parameters="--db=<vendor> --db-xa-enabled=false"/>
 
 Keycloak will automatically choose the appropriate jdbc driver for your vendor.
 

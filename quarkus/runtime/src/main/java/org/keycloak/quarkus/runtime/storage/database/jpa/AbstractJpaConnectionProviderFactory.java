@@ -27,6 +27,7 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.FlushModeType;
 import javax.persistence.SynchronizationType;
 import org.hibernate.internal.SessionFactoryImpl;
+import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.PersistenceExceptionConverter;
@@ -38,6 +39,7 @@ import io.quarkus.arc.Arc;
 import io.quarkus.hibernate.orm.PersistenceUnit;
 
 public abstract class AbstractJpaConnectionProviderFactory implements JpaConnectionProviderFactory {
+    private static final Logger logger = Logger.getLogger(AbstractJpaConnectionProviderFactory.class);
 
     protected Config.Scope config;
     protected Boolean xaEnabled;
@@ -62,7 +64,7 @@ public abstract class AbstractJpaConnectionProviderFactory implements JpaConnect
     @Override
     public void init(Config.Scope config) {
         this.config = config;
-        xaEnabled = "xa".equals(Configuration.getRawValue("kc.transaction-xa-enabled"));
+        xaEnabled = "xa".equals(Configuration.getRawValue("kc.db-xa-enabled"));
     }
 
     @Override
@@ -102,6 +104,8 @@ public abstract class AbstractJpaConnectionProviderFactory implements JpaConnect
 
     protected EntityManager createEntityManager(EntityManagerFactory emf, KeycloakSession session) {
         EntityManager entityManager;
+        logger.info("XA transaction mode: " + Configuration.getRawValue("kc.db-xa-enabled") + " with underlying quarkus variable: " + Configuration.getRawValue("quarkus.datasource.jdbc.transactions"));
+        logger.info("JTA transaction mode: " + Configuration.getRawValue("kc.transaction-jta-enabled") + " with underlying quarkus variable: " + Configuration.getRawValue("quarkus.datasource.jdbc.transactions"));
 
         if (xaEnabled) {
             entityManager = PersistenceExceptionConverter.create(session, emf.createEntityManager(SynchronizationType.SYNCHRONIZED));
