@@ -28,7 +28,7 @@ import io.quarkus.test.junit.main.LaunchResult;
 public class CustomTransactionDistTest {
 
     @Test
-    @Launch({ "build", "--db=mssql", "--transaction-mode=enabled" })
+    @Launch({ "build", "--db=mssql", "--db-xa-enabled=false" })
     void testNoXa(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertBuild();
