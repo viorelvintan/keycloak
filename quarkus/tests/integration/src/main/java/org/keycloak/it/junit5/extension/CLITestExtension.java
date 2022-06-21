@@ -247,15 +247,26 @@ public class CLITestExtension extends QuarkusMainTestExtension {
 
         if (database != null) {
             if (dist == null) {
-                configureDevServices();
-                setProperty("kc.db", database.alias());
+                if(database.alias().equals("cockroach")) {
+                    setProperty("kc.transaction-jta-enabled","false");
+                    setProperty("kc.db", "postgres");
+                } else {
+                    configureDevServices();
+                    setProperty("kc.db", database.alias());
+                }
                 setProperty("kc.db-password", DatabaseContainer.DEFAULT_PASSWORD);
             } else {
                 databaseContainer = new DatabaseContainer(database.alias());
 
                 databaseContainer.start();
 
-                dist.setProperty("db", database.alias());
+                if(database.alias().equals("cockroach")) {
+                    dist.setProperty("transaction-jta-enabled","false");
+                    dist.setProperty("db", "postgres");
+                } else {
+                    dist.setProperty("db", database.alias());
+                }
+
                 dist.setProperty("db-username", databaseContainer.getUsername());
                 dist.setProperty("db-password", databaseContainer.getPassword());
                 dist.setProperty("db-url", databaseContainer.getJdbcUrl());

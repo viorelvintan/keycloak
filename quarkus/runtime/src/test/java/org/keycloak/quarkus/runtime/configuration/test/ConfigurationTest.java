@@ -397,7 +397,7 @@ public class ConfigurationTest {
     public void testDatabaseDriverSetExplicitly() {
         System.setProperty(CLI_ARGS, "--db=mssql" + ARG_SEPARATOR + "--db-url=jdbc:sqlserver://localhost/keycloak");
         System.setProperty("kc.db-driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver");
-        System.setProperty("kc.db-xa-enabled", "false");
+        System.setProperty("kc.transaction-xa-enabled", "false");
         assertTrue(System.getProperty(CLI_ARGS, "").contains("mssql"));
         SmallRyeConfig config = createConfig();
         assertEquals("jdbc:sqlserver://localhost/keycloak", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
@@ -414,14 +414,14 @@ public class ConfigurationTest {
 
     @Test
     public void testTransactionTypeChangesDriver() {
-        System.setProperty(CLI_ARGS, "--db=mssql" + ARG_SEPARATOR + "--db-xa-enabled=false");
+        System.setProperty(CLI_ARGS, "--db=mssql" + ARG_SEPARATOR + "--transaction-xa-enabled=false");
         assertTrue(System.getProperty(CLI_ARGS, "").contains("mssql"));
 
         SmallRyeConfig jtaEnabledConfig = createConfig();
         assertEquals("com.microsoft.sqlserver.jdbc.SQLServerDriver", jtaEnabledConfig.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
         assertEquals("enabled", jtaEnabledConfig.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
 
-        System.setProperty(CLI_ARGS, "--db=mssql" + ARG_SEPARATOR + "--db-xa-enabled=true");
+        System.setProperty(CLI_ARGS, "--db=mssql" + ARG_SEPARATOR + "--transaction-xa-enabled=true");
         assertTrue(System.getProperty(CLI_ARGS, "").contains("mssql"));
         SmallRyeConfig xaConfig = createConfig();
 

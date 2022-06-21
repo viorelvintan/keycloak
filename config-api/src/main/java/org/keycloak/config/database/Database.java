@@ -71,14 +71,17 @@ public final class Database {
 
     public static Optional<String> getDriver(String alias, boolean isXaEnabled) {
         Vendor vendor = DATABASES.get(alias);
+        System.out.println("Database::getDriver called. Alias: " + alias + " isXaEnabled: " + isXaEnabled + " vendor: " + vendor == null ? "N/A" : vendor.databaseKind);
 
         if (vendor == null) {
             return Optional.empty();
         }
 
         if (isXaEnabled) {
+            System.out.println("Database::getDriver xa enabled. returning XA driver.");
             return Optional.of(vendor.xaDriver);
         }
+        System.out.println("Database::getDriver xa disabled. returning NON-XA driver.");
 
         return Optional.of(vendor.nonXaDriver);
     }

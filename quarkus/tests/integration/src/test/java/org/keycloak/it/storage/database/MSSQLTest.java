@@ -36,7 +36,7 @@ public class MSSQLTest extends BasicDatabaseTest {
      */
     @Override
     @Test
-    @Launch({ "--db-xa-enabled=false", "start-dev" })
+    @Launch({ "--transaction-xa-enabled=false", "start-dev" })
     void testSuccessful(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStartedDevMode();

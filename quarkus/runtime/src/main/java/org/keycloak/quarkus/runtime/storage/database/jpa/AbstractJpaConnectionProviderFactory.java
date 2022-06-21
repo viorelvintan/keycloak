@@ -64,7 +64,7 @@ public abstract class AbstractJpaConnectionProviderFactory implements JpaConnect
     @Override
     public void init(Config.Scope config) {
         this.config = config;
-        xaEnabled = "xa".equals(Configuration.getRawValue("kc.db-xa-enabled"));
+        xaEnabled = "xa".equals(Configuration.getRawValue("kc.transaction-xa-enabled"));
     }
 
     @Override
@@ -104,7 +104,7 @@ public abstract class AbstractJpaConnectionProviderFactory implements JpaConnect
 
     protected EntityManager createEntityManager(EntityManagerFactory emf, KeycloakSession session) {
         EntityManager entityManager;
-        logger.info("XA transaction mode: " + Configuration.getRawValue("kc.db-xa-enabled") + " with underlying quarkus variable: " + Configuration.getRawValue("quarkus.datasource.jdbc.transactions"));
+        logger.info("XA transaction mode: " + Configuration.getRawValue("kc.transaction-xa-enabled") + " with underlying quarkus variable: " + Configuration.getRawValue("quarkus.datasource.jdbc.transactions"));
         logger.info("JTA transaction mode: " + Configuration.getRawValue("kc.transaction-jta-enabled") + " with underlying quarkus variable: " + Configuration.getRawValue("quarkus.datasource.jdbc.transactions"));
 
         if (xaEnabled) {
